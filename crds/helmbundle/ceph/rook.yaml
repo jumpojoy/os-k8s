@@ -1,0 +1,16 @@
+apiVersion: lcm.mirantis.com/v1alpha1
+kind: HelmBundle
+metadata:
+  name: rook
+spec:
+  repositories:
+  - name: rook
+    url: 'https://charts.rook.io/master'
+  releases:
+  - name: rook-ceph
+    chart: rook/rook-ceph
+    version: 1.0.0
+    namespace: rook-ceph
+    values:
+      manifests:
+        network_policy: false

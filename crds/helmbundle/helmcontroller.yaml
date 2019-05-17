@@ -1,0 +1,195 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tiller
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: tiller
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: helm-controller-service
+  namespace: kube-system
+  labels:
+    app: helm-controller
+spec:
+  selector:
+    app: helm-controller
+  ports:
+  # tiller probe/metrics port
+  - port: 44135
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tiller
+  namespace: kube-system
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: helmbundles.lcm.mirantis.com
+spec:
+  group: lcm.mirantis.com
+  names:
+    kind: HelmBundle
+    plural: helmbundles
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            releases:
+              description: The list of releases in this bundle.
+              items:
+                properties:
+                  chart:
+                    description: Chart name of the form "repo/name" or just "name".
+                    type: string
+                  labels:
+                    description: The labels to apply to the release.
+                    type: object
+                  name:
+                    description: The name of this release.
+                    type: string
+                  namespace:
+                    description: The namespace of this release.
+                    type: string
+                  values:
+                    description: Values used for parametrization of the chart.
+                    type: object
+                  version:
+                    description: Chart version.
+                    type: string
+                required:
+                - chart
+                - version
+                - name
+                - namespace
+                type: object
+              type: array
+            repositories:
+              description: The list of repositories used by this bundle.
+              items:
+                properties:
+                  certFile:
+                    description: Authentication secret file.
+                    type: string
+                  name:
+                    description: The name of the repository.
+                    type: string
+                  url:
+                    description: The URL of the repository.
+                    type: string
+                required:
+                - name
+                - url
+                type: object
+              type: array
+          required:
+          - releases
+          type: object
+        status:
+          properties:
+            releaseStatuses:
+              description: The mapping of the names of the releases to their statuses.
+              type: object
+          type: object
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: helm-controller
+  name: helm-controller
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: helm-controller
+  serviceName: helm-controller-service
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  template:
+    metadata:
+      labels:
+        app: helm-controller
+    spec:
+      serviceAccountName: tiller
+      containers:
+      - name: tiller
+        args:
+        - --listen=localhost:44134
+        command:
+        - /tiller
+        env:
+        - name: TILLER_NAMESPACE
+          value: kube-system
+        - name: TILLER_HISTORY_MAX
+          value: "0"
+        image: gcr.io/kubernetes-helm/tiller:v2.13.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 44135
+          initialDelaySeconds: 1
+          timeoutSeconds: 1
+        ports: []
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 44135
+          initialDelaySeconds: 1
+          timeoutSeconds: 1
+        resources: {}
+      - name: controller
+        command: ["/helm-controller", "-host", "localhost:44134", "-home", "/helm", "-debug"]
+        env:
+        - name: TMPDIR
+          value: /helm
+#        image: docker-prod-local.artifactory.mirantis.com/mirantis/kubernetes/lcm/lcm-controller:latest
+        image: docker-dev-local.docker.mirantis.net/mirantis/kubernetes/lcm/lcm-controller:v0.1.2-8_1559131276762
+        securityContext:
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: home
+          mountPath: /helm
+      volumes:
+      - name: home
+        emptyDir: {}

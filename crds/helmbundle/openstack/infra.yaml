@@ -1,0 +1,43 @@
+apiVersion: lcm.mirantis.com/v1alpha1
+kind: HelmBundle
+metadata:
+  name: openstack-infra
+spec:
+  repositories:
+  - name: oscore
+    url: 'https://artifactory.mcp.mirantis.net/artifactory/helm-dev-virtual/'
+  releases:
+  - name: ingress-openstack
+    chart: oscore/ingress
+    version: 0.1.0
+    namespace: default
+    values:
+      manifests:
+        network_policy: false
+  - name: openstack-mariadb
+    chart: oscore/mariadb
+    version: 0.1.0
+    namespace: default
+    values:
+      manifests:
+        network_policy: false
+      pod:
+        replicas:
+          server: 1
+  - name: openstack-rabbitmq
+    chart: oscore/rabbitmq
+    version: 0.1.0
+    namespace: default
+    values:
+      pod:
+        replicas:
+          server: 1
+      manifests:
+        network_policy: false
+  - name: openstack-memcached
+    chart: oscore/memcached
+    version: 0.1.0
+    namespace: default
+    values:
+      manifests:
+        network_policy: false

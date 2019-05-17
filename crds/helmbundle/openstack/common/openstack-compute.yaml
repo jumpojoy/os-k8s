@@ -1,0 +1,76 @@
+apiVersion: lcm.mirantis.com/v1alpha1
+kind: HelmBundle
+metadata:
+  name: openstack-compute
+spec:
+  repositories:
+  - name: oscore
+    url: 'https://artifactory.mcp.mirantis.net/artifactory/helm-dev-virtual/'
+  releases:
+  - name: openstack-libvirt
+    chart: oscore/libvirt
+    version: 0.1.0
+    namespace: default
+    values:
+      images:
+        tags:
+          libvirt: docker-prod-virtual.docker.mirantis.net/mcp/libvirt:4.0.0-bionic-1554881274591
+      manifests:
+        network_policy: false
+      conf:
+        ceph:
+          enabled: false
+  - name: openstack-nova
+    chart: oscore/nova
+    version: 0.1.0
+    namespace: default
+    values:
+      images:
+        tags:
+          bootstrap: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          db_drop: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          db_init: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          dep_check: 'quay.io/stackanetes/kubernetes-entrypoint:v0.3.1'
+          rabbit_init: docker.io/rabbitmq:3.7-management
+          ks_user: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          ks_service: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          ks_endpoints: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          nova_api: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          nova_cell_setup: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          nova_cell_setup_init: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          nova_compute: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          nova_compute_ironic: 'docker.io/kolla/ubuntu-source-nova-compute-ironic:ocata'
+          nova_compute_ssh: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          nova_conductor: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          nova_consoleauth: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          nova_db_sync: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          nova_novncproxy: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          nova_novncproxy_assets: 'docker.io/kolla/ubuntu-source-nova-novncproxy:ocata'
+          nova_placement: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          nova_scheduler: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          # NOTE(portdirect): we simply use the ceph config helper here,
+          # as it has both oscli and jq.
+          nova_service_cleaner: 'docker.io/port/ceph-config-helper:v1.10.3'
+          nova_spiceproxy: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/nova:stein-bionic-20190529161356
+          nova_spiceproxy_assets: 'docker.io/kolla/ubuntu-source-nova-spicehtml5proxy:ocata'
+          test: docker.io/xrally/xrally-openstack:1.3.0
+          image_repo_sync: docker.io/docker:17.07.0
+      manifests:
+        network_policy: false
+#      ceph_client:
+#        configmap: rook-ceph-config
+#        user_secret_name: rook-ceph-admin-keyring
+      conf:
+        ceph:
+          enabled: false
+#          admin_keyring:
+#          cinder:
+#            user: "cinder"
+      #      keyring: AQAHkNFcy0NJLhAAgirzRZJTb35tbwhbMkrIAw==
+      #      keyring: null
+#            secret_uuid: 457eb676-33da-42ec-9a8c-9293d545c337
+        nova:
+          libvirt:
+            cpu_mode: custom
+            cpu_model: kvm64
+            virt_type: kvm
