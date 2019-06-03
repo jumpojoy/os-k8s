@@ -1,0 +1,53 @@
+apiVersion: lcm.mirantis.com/v1alpha1
+kind: HelmBundle
+metadata:
+  name: openstack-cinder
+spec:
+  repositories:
+  - name: oscore
+    url: 'https://artifactory.mcp.mirantis.net/artifactory/helm-dev-virtual/'
+  releases:
+  - name: openstack-cinder
+    chart: oscore/cinder
+    version: 0.1.0
+    namespace: default
+    values:
+      pod:
+        replicas:
+          api: 1
+          registry: 1
+      storage: ceph
+      ceph_client:
+        configmap: rook-ceph-config
+        user_secret_name: rook-ceph-admin-keyring
+      conf:
+        ceph:
+          pools:
+            backup:
+              replication: 1
+              crush_rule: replicated_ruleset
+              chunk_size: 8
+            volume:
+              replication: 1
+              crush_rule: replicated_ruleset
+              chunk_size: 8
+      images:
+        tags:
+          bootstrap: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          test: docker.io/xrally/xrally-openstack:1.3.0
+          db_init: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          cinder_db_sync: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/cinder:stein-bionic-20190529161356
+          db_drop: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          ks_user: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          rabbit_init: docker.io/rabbitmq:3.7-management
+          cinder_fernet_setup: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/cinder:stein-bionic-20190529161356
+          cinder_fernet_rotate: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/cinder:stein-bionic-20190529161356
+          cinder_credential_setup: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/cinder:stein-bionic-20190529161356
+          cinder_credential_rotate: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/cinder:stein-bionic-20190529161356
+          cinder_credential_cleanup: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/heat:stein-bionic-20190529161356
+          cinder_api: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/cinder:stein-bionic-20190529161356
+          cinder_domain_manage: docker-dev-virtual.docker.mirantis.net/mirantis/oscore/oh/cinder:stein-bionic-20190529161356
+          dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
+          image_repo_sync: docker.io/docker:17.07.0
+      manifests:
+        network_policy: false

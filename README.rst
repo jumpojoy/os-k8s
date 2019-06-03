@@ -66,6 +66,7 @@ Deploy rest of core openstack
 =============================
 
 kubectl apply -f crds/helmbundle/openstack/ceph/glance.yaml
+kubectl apply -f crds/helmbundle/openstack/ceph/cinder.yaml
 kubectl apply -f  crds/helmbundle/openstack/common/openstack-network.yaml
 kubectl apply -f  crds/helmbundle/openstack/common/openstack-compute.yaml
 
