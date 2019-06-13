@@ -5,7 +5,7 @@ metadata:
 spec:
   repositories:
   - name: rook
-    url: 'https://charts.rook.io/master'
+    url: 'https://charts.rook.io/release'
   releases:
   - name: rook-ceph
     chart: rook/rook-ceph
