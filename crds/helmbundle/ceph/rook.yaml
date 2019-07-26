@@ -14,7 +14,3 @@ spec:
     values:
       manifests:
         network_policy: false
-      # kubespray default volume path is set to /var/lib/kubelet/volume-plugins
-      # this change is needed if we using kubernetes deployed by kubespray (KaaS)
-      agent:
-        flexVolumeDirPath: '/var/lib/kubelet/volume-plugins'
